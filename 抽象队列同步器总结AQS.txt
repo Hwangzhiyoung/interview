@@ -1,0 +1,21 @@
+#独占锁
+reentrantlock
+
+1. ReentrantLockDemo例子，独占锁的使用
+首先，lock()方法里：(非公平实现锁)第一个线程cas获取到锁状态，0->1，并把独占线程标识为当前线程
+      unlock()方法里：release里识别到head头是空，所以不需要unpark，直接返回了true
+	  第一个加锁成功的线程没有park，unpark，因为不需要
+接着，并发下第二个线程去执行加锁逻辑，会进入同步等待队列，阻塞park住
+相同，并发下第三个线程去执行加锁逻辑，会进入同步等待队列，阻塞park住
+然后第一个线程执行完业务逻辑，释放锁unpark后，第二个线程就可以从park方法里出来进入线程标记，接着它又加锁，state 从0->1
+然后第二个线程执行完业务逻辑，释放锁后，第三个线程又可继续执行加锁状态
+
+reentrantlock 里数据结构 是  state，exclusiveThread，prev，next，waitStatus
+只有当head 头节点waitStatus是-1 signal可唤醒时，才会把下一个节点唤醒出队列
+双向列表，为什么要双向，因为要有前驱节点去知道中断/取消的时候节点位置，好让废弃节点出队
+
+
+公平锁和非公平锁区别：非公平上来直接先cas加锁状态
+
+
+try ... finally ... try return之前会执行finally的逻辑再return
